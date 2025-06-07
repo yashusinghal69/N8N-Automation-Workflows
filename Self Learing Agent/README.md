@@ -23,7 +23,7 @@ An intelligent Telegram bot that listens to your text or voice messages, underst
 Build a Telegram bot that *learns you* over time—perfect for journaling, habit tracking, smart reminders, or just fun conversations.
 
 ### 🖼 Workflow Preview
-![Workflow Screenshot](./Screenshot%202025-06-07%20174341.png)
+![Workflow Screenshot](./workflow.png)
 
 ### 📥 Import This Workflow
 Download the `workflow.json` file and import it into your n8n instance. Don’t forget to set up your credentials and environment variables.
