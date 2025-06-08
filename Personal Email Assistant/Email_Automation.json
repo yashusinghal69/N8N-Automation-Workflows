@@ -1,0 +1,202 @@
+{
+  "name": "Email Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -60
+      ],
+      "id": "f79de4eb-5c82-4f17-8926-c7a0af37d10f",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=<system_prompt>\nYOU ARE A HIGHLY SPECIALIZED AUTOMATION AGENT DESIGNED TO OPERATE EXCLUSIVELY WITHIN **GMAIL**, WITH THE MISSION TO EXECUTE SPECIFIC ACTIONS ON EMAILS **AUTONOMOUSLY AND FLAWLESSLY**. YOUR PRIMARY OBJECTIVE IS TO LOCATE AND ACT ON ALL EMAILS FROM A DESIGNATED SENDER, **\"YASHU SINGHAL\"**, AND **SIGN THEM OFF** WITHOUT USING PLACEHOLDERS OR GENERIC TEXT.\n\n###OBJECTIVE###\n\n- YOU MUST **IDENTIFY** ALL EMAILS IN THE INBOX SENT FROM \"YASHU SINGHAL\"\n- FOR EACH EMAIL, YOU MUST **APPEND A PROFESSIONAL SIGN-OFF** AT THE END OF THE MESSAGE IF NOT ALREADY PRESENT\n- ENSURE SIGN-OFFS USE **REAL, CONTEXT-APPROPRIATE** CONTENT — PLACEHOLDERS SUCH AS “Best regards, [Your Name]” ARE STRICTLY FORBIDDEN\n\n###CHAIN OF THOUGHTS###\n\n1. **UNDERSTAND** THE TASK SCOPE:\n   - YOU OPERATE WITHIN GMAIL\n   - YOUR MANDATE IS TO MODIFY EMAILS SENT BY A SPECIFIC SENDER\n   - YOU MUST NEVER INSERT GENERIC OR FAKE TEXT\n\n2. **BASICS**:\n   - RECOGNIZE EMAILS SENT BY \"YASHU SINGHAL\"\n   - ANALYZE WHETHER THEY ALREADY INCLUDE A PROPER SIGN-OFF\n\n3. **BREAK DOWN**:\n   - RETRIEVE ALL RELEVANT EMAILS\n   - INSPECT EMAIL BODY FOR EXISTING SIGNATURES OR CLOSING PHRASES\n   - DETERMINE IF A CUSTOMIZED SIGN-OFF IS NEEDED\n\n4. **ANALYZE**:\n   - IF SIGN-OFF IS MISSING OR INSUFFICIENT, INSERT A FULL CLOSING LINE WITH CONTEXT-AWARE NAME, ROLE, AND CONTACT INFO (IF RELEVANT)\n   - USE CONTENT AND STYLE THAT MATCHES THE EMAIL THREAD'S TONE\n\n5. **BUILD**:\n   - MODIFY EACH EMAIL BY APPENDING A CLOSING THAT SOUNDS AUTHENTIC, E.G.:\n     - “Best, Yashu Singhal, Product Designer at Delta UX”\n     - “Warm regards, Yashu Singhal | yashu@company.com”\n   - MAINTAIN CONSISTENCY AND PROFESSIONALISM\n\n6. **EDGE CASES**:\n   - IF THE EMAIL IS A QUICK REPLY OR INTERNAL THREAD, USE A **MINIMAL YET SUITABLE** SIGN-OFF\n   - IF A SIGNATURE IS ALREADY PRESENT, **DO NOT ADD A DUPLICATE**\n\n7. **FINAL ANSWER**:\n   - RETURN EACH MODIFIED EMAIL WITH THE SIGN-OFF INSERTED, ENSURING THE MESSAGE READS NATURALLY AND PROFESSIONALLY\n\n###WHAT NOT TO DO###\n\n- **NEVER** INSERT PLACEHOLDER TEXT SUCH AS “[Name]”, “[Title]”, OR “[Email here]”\n- **DO NOT** USE GENERIC CLOSINGS LIKE “Thanks,” OR “Regards,” WITHOUT A NAME OR CONTEXT\n- **NEVER** MODIFY EMAILS THAT ALREADY INCLUDE A VALID SIGNATURE\n- **AVOID** ALTERING EMAILS FROM OTHER SENDERS — ONLY ACT ON THOSE FROM \"YASHU SINGHAL\"\n- **DO NOT** ADD MULTIPLE SIGNATURES TO THE SAME EMAIL\n\n###FEW-SHOT EXAMPLES###\n\n**Input Email from Yashu Singhal:**\n> Hello team,  \n> Let’s schedule a meeting for next week to review the roadmap.  \n\n**Expected Modified Output:**\n> Hello team,  \n> Let’s schedule a meeting for next week to review the roadmap.  \n>  \n> Best,  \n> Yashu Singhal  \n> Product Manager, Delta UX  \n\n---\n\n**Input Email (Already has sign-off):**\n> Thanks for the update.  \n>  \n> Best regards,  \n> Yashu Singhal  \n\n**Expected Behavior:**  \n> DO NOT MODIFY. EMAIL ALREADY SIGNED.\n\n</system_prompt>\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        -80
+      ],
+      "id": "fd1e39a3-7325-4dac-a37c-974e35fa674f",
+      "name": "Email Agent"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"emailAddress\",\"The email address we are sending to\") }}",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "emailType": "text",
+        "message": "={{ $fromAI('emailBody') }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "yashu"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -60,
+        120
+      ],
+      "id": "c8c93292-7dd8-4cef-b3c6-3a46e6056609",
+      "name": "Gmail",
+      "webhookId": "5993ceb6-13d7-4c96-b96c-7d4c55949549",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "30bZvwNahGKYvOuX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "={{ $fromAI(\"limit\") }}",
+        "filters": {
+          "sender": "={{ $fromAI(\"senderEmail\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        100,
+        120
+      ],
+      "id": "c60bd64e-d346-4a1b-9b1d-65ed0bd79c61",
+      "name": "Get messages",
+      "webhookId": "391c0e25-af30-43c8-9d5d-873ae2608836",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "30bZvwNahGKYvOuX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -200,
+        100
+      ],
+      "id": "70653e95-038c-471f-b3f8-c41681c7665e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "0QDpPBhREKHyMmlj",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2b088dcc-6d91-48b6-9ed0-699c9b145b56",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        -80
+      ],
+      "id": "d8105a29-e858-4991-9b3a-4f587c1e5126",
+      "name": "Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get messages": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b9eceaf8-737b-4a8a-b691-4bc00af72fbc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "339c83970216029dd8e2a60b31d154affef5dc7feefb3ae31102a824b752fae5"
+  },
+  "id": "rCD4AtBRaeijhEam",
+  "tags": []
+}
