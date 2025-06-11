@@ -1,0 +1,829 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -440,
+        -20
+      ],
+      "id": "5fc5eb40-7bcd-4529-a5f4-ac2c19f415a1",
+      "name": "Telegram Trigger",
+      "webhookId": "87581e33-7221-4001-b16a-92a4802cdadf",
+      "credentials": {
+        "telegramApi": {
+          "id": "YUBG18AOgAFnDH9V",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "={{ $json.message.voice.file_id }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "4a93bff9-596a-4893-b5eb-2ae0cc5d7266"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3070be43-b4cc-4987-88dc-fbca3dc76b3e",
+                    "leftValue": "={{ $json.message.text || \"\"}}",
+                    "rightValue": "={{ $json.message.text || \"\"}}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "901d3aab-9049-4e7f-b520-eca78f513850",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -200,
+        -20
+      ],
+      "id": "ba6e72fc-a7e9-4e66-bb2c-951cda7d620b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        -220
+      ],
+      "id": "76ccdbd5-256d-47f4-9aa5-cd534cb95596",
+      "name": "Telegram",
+      "webhookId": "eeb537a6-eff9-4839-aa44-ce9d7acb2e2b",
+      "alwaysOutputData": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "YUBG18AOgAFnDH9V",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        280,
+        -220
+      ],
+      "id": "18a87525-d700-402b-8d42-971cfda86608",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "Lfv3Ub4SFxlyDFlb",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ff71f1b4-c2a4-4507-adb3-ba2bd6c4457c",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        -40
+      ],
+      "id": "775f2ef2-a785-4209-928f-167386c751ac",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=You are a helpful assistant who responds to user's request in a fun, friendly but\nprofessional way. Today's date is {{ $now }}.\nGuidelines:\nEmail Management:\n- Use the Read Email tool to fetch unread emails from the inbox. Only include non-\npromotional emails in summaries. Summariseach email by including the Sender,\nMessage Date, Subject, and a brief summar of the content.\n- For sending emails, use the Send Email tool. Ensure to include the recipient's\naddress, subject, and body of the email. Format the body as HTML if required.\nCalendar Management:\n- To retrieve calendar events, use the Get Calendar tool. If the user hasn't\nspecified a date, default to today's events. Only mention upcoming events within one\nweek if the query is for future events.\n- For adding a new event, use the Set Calendar tool. Include the event title, date,\ntime, and any relevant description.\nTask Management:\n- Use the Airtable Search Record tool to find specific tasks or records related to\nuser queries.\n- Use the Airtable Create Record tool to add new tasks if the user wants to create\nor log something.\nWeb and Information Queries:\nFor general information queries, use the SerpAPI to fetch results from Google\nSearch.\n- If the user requests the latest news on specific topics, use the Hacker News tool\nto fetch Specify keywords if provided.\nWeather Information:\n- Use the Weather_Data tool to retrieve current weather information. Input should be the city name provided by the user.\nCalculations:\nUse the Calculator tool for any arithmetic or mathematical query\nMemory and Context:\n- Remember to use the memory to maintain context within the current cnversation\nsession.\nIf the user switches topics or requests clarification, reset   context as needed.\nResponse Structure:\nKeep responses concise and relevant to the user's question.\nDesvide additional datnite if the wear nake for alabaration\n\n \n "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        520,
+        -40
+      ],
+      "id": "66d7472c-dc32-4a8f-9cbc-05f1f44e63ad",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        100,
+        360
+      ],
+      "id": "81f463e8-6c7b-41f5-ae6d-826567636d28",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 10,
+        "filters": {
+          "includeSpamTrash": false,
+          "labelIds": [
+            "INBOX",
+            "UNREAD"
+          ],
+          "readStatus": "unread",
+          "receivedAfter": "=  {{ $fromAI(\"date\",\"The date after which to fetch the message in format YYYY-MM-DDTHH:MM:SS\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        360
+      ],
+      "id": "ad827ee9-5486-4ade-a6de-cdb20a8db534",
+      "name": "Read Gmail",
+      "webhookId": "819ad1f4-83ea-4ca0-a312-0d0325479fff",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "H6j7xiSEHBpAlJFR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        360,
+        360
+      ],
+      "id": "9aa4d496-7d25-482c-888b-7f5fb66b3ff4",
+      "name": "Gmail",
+      "webhookId": "863e7bca-dd6f-4886-b45f-48795b8c08a4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "H6j7xiSEHBpAlJFR",
+          "name": "Gmail account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appZ7onzSLu9geKXR",
+          "mode": "list",
+          "cachedResultName": "Ultimate Assistant",
+          "cachedResultUrl": "https://airtable.com/appZ7onzSLu9geKXR"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblS7gTEHUzMwZkh8",
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://airtable.com/appZ7onzSLu9geKXR/tblS7gTEHUzMwZkh8"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        360
+      ],
+      "id": "695d5f77-f09a-4d7f-a7a4-764d24fccf53",
+      "name": "Contacts",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "K8MFbmAZjwjFl2qt",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appZ7onzSLu9geKXR",
+          "mode": "list",
+          "cachedResultName": "Ultimate Assistant",
+          "cachedResultUrl": "https://airtable.com/appZ7onzSLu9geKXR"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblS7gTEHUzMwZkh8",
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://airtable.com/appZ7onzSLu9geKXR/tblS7gTEHUzMwZkh8"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{$fromAI('name')}}",
+            "phone_number": "={{ $fromAI(\"email\") }}",
+            "Email": "={{ $fromAI(\"phone_number\") }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        620,
+        360
+      ],
+      "id": "08753b97-5d82-47cb-b047-bd7a451bf461",
+      "name": "Create Contacts",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "K8MFbmAZjwjFl2qt",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appZ7onzSLu9geKXR",
+          "mode": "list",
+          "cachedResultName": "Ultimate Assistant",
+          "cachedResultUrl": "https://airtable.com/appZ7onzSLu9geKXR"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl0WrstWDhozerni",
+          "mode": "list",
+          "cachedResultName": "Tasks",
+          "cachedResultUrl": "https://airtable.com/appZ7onzSLu9geKXR/tbl0WrstWDhozerni"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        780,
+        360
+      ],
+      "id": "7c8e4d67-f4e8-4629-a3a7-a6e5c835bae5",
+      "name": "Tasks",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "K8MFbmAZjwjFl2qt",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        940,
+        360
+      ],
+      "id": "85f26b97-e875-43f6-b566-86997adf3658",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "zntKcKK8oM6udLYt",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        360
+      ],
+      "id": "68b7dbd3-400b-4aad-b43f-c0029d4a5cb5",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "resource": "all",
+        "limit": "={{ $fromAI('amount_of_articles') }}",
+        "additionalFields": {
+          "keyword": "={{ $fromAI('search_query') }}"
+        }
+      },
+      "type": "n8n-nodes-base.hackerNewsTool",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        360
+      ],
+      "id": "31c14322-9447-4349-a815-6411cff15e41",
+      "name": "Hacker News"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "= {{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        980,
+        -40
+      ],
+      "id": "e08b8f29-880b-484e-98a4-032c197d09f5",
+      "name": "Telegram1",
+      "webhookId": "abe87951-e61a-4d4f-9817-d01d444568b4",
+      "credentials": {
+        "telegramApi": {
+          "id": "YUBG18AOgAFnDH9V",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -60,
+        360
+      ],
+      "id": "4e630052-8934-4708-ba79-b2550fd3cb9b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Lfv3Ub4SFxlyDFlb",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1,
+      "position": [
+        1460,
+        320
+      ],
+      "id": "98fa9c4a-d0b8-4d55-b3de-83f25d6eb688",
+      "name": "Answer questions with a vector store"
+    },
+    {
+      "parameters": {
+        "memoryKey": {
+          "__rl": true,
+          "value": "vector_store_key",
+          "mode": "list",
+          "cachedResultName": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        480
+      ],
+      "id": "724425f4-9278-4863-bc16-35869d6d056d",
+      "name": "Simple Vector Store"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1620,
+        480
+      ],
+      "id": "3c480c06-8cb9-49fd-873a-ad721f85eb77",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Lfv3Ub4SFxlyDFlb",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1420,
+        640
+      ],
+      "id": "7a51683f-b07a-4037-966c-4a03adc42b29",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9MBeWsmr0pbQ0Vd9",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tasks": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hacker News": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer questions with a vector store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9468d1a0-54db-419d-b065-24666ab2b471",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f23a881e68f67d756d02c3892864cbf67819e384b2882170d507d3ffce35092c"
+  },
+  "id": "yzk0vkJhSl5Qcddt",
+  "tags": []
+}
