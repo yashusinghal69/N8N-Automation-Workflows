@@ -1,0 +1,725 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        340
+      ],
+      "id": "eb9fd917-c228-45f7-8d4e-df3ca337964d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "subreddit": "smallbusiness",
+        "keyword": "business idea , thinking of starting , startup idea , new product idea , I want to build",
+        "limit": 20,
+        "additionalFields": {
+          "sort": "hot"
+        }
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        400,
+        200
+      ],
+      "id": "e0b76c5c-1a25-4a0d-87af-e1969f4384af",
+      "name": "Reddit",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "b2Ridf4xxyxng3yK",
+          "name": "Reddit account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "921873f3-087e-456f-8e86-9fd8bb59257f",
+              "leftValue": "={{ $json.ups }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "13417bd0-8fe5-4818-9f26-4d0d5221cdc6",
+              "leftValue": "={{ $json.selftext }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "09ce7757-0630-4d2f-9050-76bb5a760513",
+              "leftValue": "={{ DateTime.fromSeconds($json.created).toISO() }}",
+              "rightValue": "={{ $today.minus({days:180}).toISO() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        600,
+        360
+      ],
+      "id": "02ba9afa-b6cd-4e7e-b35c-af0417e19751",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "42a09fc6-fced-4404-963c-102d3d83ac05",
+              "name": "upvotes",
+              "value": "={{ $json.ups }}",
+              "type": "number"
+            },
+            {
+              "id": "5cf6c2e7-2d2b-4a69-a597-67efde26d2e6",
+              "name": "subRedditSize",
+              "value": "={{ $json.subreddit_subscribers }}",
+              "type": "number"
+            },
+            {
+              "id": "41661560-f81d-4f5b-8063-8c12f564e84e",
+              "name": "originalPost",
+              "value": "={{ $json.selftext }}",
+              "type": "string"
+            },
+            {
+              "id": "8c7e2fc6-9a2e-41ba-ac17-38826069775f",
+              "name": "subreddit",
+              "value": "={{ $json.subreddit }}",
+              "type": "string"
+            },
+            {
+              "id": "e61f796f-3af2-4490-b4a9-29ff3a534383",
+              "name": "date",
+              "value": "={{ DateTime.fromSeconds($json.created).toLocaleString() }}",
+              "type": "string"
+            },
+            {
+              "id": "55b93a94-d55c-4a53-92b1-3153c93d0191",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        840,
+        220
+      ],
+      "id": "c9e19efb-8b6f-4da7-8fdd-b102bec40ccb",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant that classifies Reddit posts. Analyze the post content provided in {{$json.originalPost}} and determine if it describes a business-related problem or expresses a need for a solution.\n\nRespond with only one word:\nYes — if the post is about a business problem, pain point, or need for a solution.\nNo — if it is unrelated or general discussion without any business need.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        360
+      ],
+      "id": "4b7a9fe7-6aac-4ce9-93ec-4f31faf5e7fb",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        920,
+        560
+      ],
+      "id": "bf5a3194-ffcc-4133-acf2-d05c95d99ac9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9MBeWsmr0pbQ0Vd9",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1380,
+        160
+      ],
+      "id": "8310ee8a-dd43-4e36-bef0-c4e59a959798",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2ccbb343-4f86-4226-8acc-10c80dd94905",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1580,
+        260
+      ],
+      "id": "ce07ef54-6dd7-461b-b4e9-782d726b2929",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "typeVersion": 2.1,
+      "position": [
+        1920,
+        20
+      ],
+      "id": "da21e16f-56a7-40e1-a4ac-a297234e1bca",
+      "name": "Summarization Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2040,
+        200
+      ],
+      "id": "7b1806c5-4d74-4447-9bfc-c5b5561d3035",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9MBeWsmr0pbQ0Vd9",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a business idea generation expert. Your task is to carefully analyze the Reddit post content given in {{$json.originalPost}}.\n\nThe post may describe a pain point, inefficiency, unmet need, or frustration—especially in a business or operational context.\n\nBased on the post, your goal is to:\n\nIdentify the core problem or need being expressed.\n\nSuggest a business idea, SaaS product, automation service, or startup that could solve this problem effectively.\n\nBriefly mention related use cases or industries where this idea might also be valuable.\n\nKeep your suggestion original, actionable, and clearly tied to the problem in the post. Think creatively, but stay grounded in real-world feasibility."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1960,
+        400
+      ],
+      "id": "0eda9a1b-565b-4b92-a5f5-2470aef2fce9",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "Lfv3Ub4SFxlyDFlb",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2440,
+        460
+      ],
+      "id": "757f596a-3b44-41e8-a662-7fc678a4921e",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZvEbvzHsMWeA1rjQKAPb2h4SKyzRbmVjXrCP_jhTlyw",
+          "mode": "list",
+          "cachedResultName": "Reddit Small Business Ideas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZvEbvzHsMWeA1rjQKAPb2h4SKyzRbmVjXrCP_jhTlyw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZvEbvzHsMWeA1rjQKAPb2h4SKyzRbmVjXrCP_jhTlyw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subreddit": "={{ $json.subreddit }}",
+            "SubredditSize": "={{ $json.subRedditSize }}",
+            "Original Post Date": "={{ $json.date }}",
+            "Upvotes": "={{ $json.upvotes }}",
+            "Post URL": "={{ $json.url }}",
+            "Post Summary": "= {{ $json.output.text }}",
+            "Potential Solution": "={{ $json.message.content }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Subreddit",
+              "displayName": "Subreddit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SubredditSize",
+              "displayName": "SubredditSize",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Original Post Date",
+              "displayName": "Original Post Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Upvotes",
+              "displayName": "Upvotes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Post URL",
+              "displayName": "Post URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Post Summary",
+              "displayName": "Post Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Potential Solution",
+              "displayName": "Potential Solution",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2660,
+        300
+      ],
+      "id": "ad18e9a5-60eb-41e2-a59f-14ae51c9e07d",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9eniQGUlFXsuFwfR",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.originalPost }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        660
+      ],
+      "id": "b872aa88-57e2-4462-a88b-b3074e6e1c68",
+      "name": "Sentiment Analysis"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1620,
+        860
+      ],
+      "id": "27a37d79-4ffe-49eb-9fd1-d9924025955b",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9MBeWsmr0pbQ0Vd9",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2620,
+        640
+      ],
+      "id": "5ae2e6cd-7e5c-4085-98ab-08d8d203c8de",
+      "name": "Slack",
+      "webhookId": "a1a5db4e-60d9-4029-bc72-040770029b37"
+    },
+    {
+      "parameters": {
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2600,
+        800
+      ],
+      "id": "bb97d31a-4382-4e96-9218-5654d7e5f9e0",
+      "name": "Slack1",
+      "webhookId": "42cd0a1b-fb14-489e-89e2-8c4efa1770ce"
+    },
+    {
+      "parameters": {
+        "sendTo": "yashusinghal100@gmail.com",
+        "subject": "Sentiment Analysis of reddit post",
+        "message": "={{ $json.sentimentAnalysis.category }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2480,
+        980
+      ],
+      "id": "81d8be4d-daab-4cfd-9a57-1ac2890416ac",
+      "name": "Gmail",
+      "webhookId": "b0982744-907d-4cef-8fc7-9a2caed2413d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "H6j7xiSEHBpAlJFR",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reddit": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          },
+          {
+            "node": "Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarization Chain": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "Slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "49bd2b8f-1c41-4873-9695-8472149f2e8c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f23a881e68f67d756d02c3892864cbf67819e384b2882170d507d3ffce35092c"
+  },
+  "id": "eR7XkTFU0qM1rlbI",
+  "tags": []
+}
